@@ -1,0 +1,21 @@
+@font-face {
+    font-family: 'Nunito';
+    font-style: normal;
+    font-weight: 400;
+    src: url(/fonts/XRXI3I6Li01BKofiOc5wtlZ2di8HDLshdTQ3ig.ttf) format('truetype');
+}
+
+body {
+    background-color: #f8fafc;
+    color: #212529;
+    font-family: Nunito,sans-serif;
+    font-size: .9rem;
+    font-weight: 400;
+    line-height: 1.6;
+    margin: 0;
+    text-align: left;
+}
+
+.app-card {
+    margin-bottom: 20px;
+}

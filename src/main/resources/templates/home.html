@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta th:name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <title>Scout Helper</title>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/jquery@3.6.1/dist/jquery.min.js" defer></script>
+    <script src="https://unpkg.com/bootstrap@4.6.2/dist/js/bootstrap.min.js" defer></script>
+    <!-- Fonts -->
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+
+    <!-- Styles -->
+    <link href="https://unpkg.com/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
+    <link th:href="@{styles.css}" rel="stylesheet">
+</head>
+<body>
+<nav id="navbar" class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}">
+            Scout Helper
+        </a>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <!-- Left Side Of Navbar -->
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout"
+                       onclick="event.preventDefault();
+                                                     document.getElementById('logout-form').submit();">Logout</a>
+                    <form id="logout-form" th:action="@{/logout}" method="POST"
+                          style="display: none;">
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<main class="py-4" id="content">
+    <div class="container" id="app">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="col-md-8">
+                    <el-card class="app-card">
+                        <div slot="header" class="clearfix">
+                            <span>Character Information</span>
+                        </div>
+                        <div>
+                            Name: <span th:text="${name}"></span>
+                        </div>
+                    </el-card>
+                </div>
+                <div class="col-md-12">
+                    <el-card v-loading="builderLoading">
+                        <div slot="header" class="clearfix">
+                            <span>Route Builder</span>
+                        </div>
+                        <div>
+                            <el-autocomplete
+                                    v-model="input"
+                                    :fetch-suggestions="querySearch"
+                                    placeholder="Please type system name"
+                                    :trigger-on-focus="false"
+                                    @select="enterHandler">
+                            </el-autocomplete>
+                            <div v-if="points.length > 0">
+                                {{ text }}
+                                <div>
+                                    <el-button type="danger" size="mini" @click="clearRoute">
+                                        Clear
+                                    </el-button>
+                                    <el-button type="success" size="mini" @click="saveRoute">
+                                        Save Route
+                                    </el-button>
+                                    <el-button type="primary" size="mini" @click="buildRoute">
+                                        Apply to game
+                                    </el-button>
+                                </div>
+                            </div>
+                        </div>
+                    </el-card>
+                </div>
+            </div>
+            <div class="col-md-6" id="my-favorites">
+                <el-card v-loading="favoriteCardLoading">
+                    <div slot="header" class="clearfix">
+                        <span>My route favorites</span>
+                    </div>
+                    <div>
+                        <el-card v-for="(favorite, index) in favorites" :key="favorite.id" class="app-card" shadow="hover">
+                            <div slot="header" class="clearfix">
+                                <span>{{favorite.name}}</span>
+                                <div style="float: right">
+                                    <el-button size="mini" type="primary" @click="applyRoute(favorite.id)">Apply to game</el-button>
+                                    <el-button size="mini" type="danger" @click="deleteFavorite(favorite.id, index)">Delete</el-button>
+                                </div>
+                            </div>
+                            <span v-for="point in favorite.points">{{point}} -> </span>
+                        </el-card>
+                    </div>
+                </el-card>
+            </div>
+        </div>
+
+        <div id="saveRouteDialog">
+            <el-dialog
+                    title="Save to my favorite"
+                    :visible.sync="saveRouteDialogState.visible"
+                    v-loading="saveRouteDialogState.loading">
+                <el-form>
+                    <el-form-item label="Name" label-width="80px" required>
+                        <el-input v-model="saveRouteDialogState.name"></el-input>
+                    </el-form-item>
+                </el-form>
+                <span slot="footer" class="dialog-footer">
+                    <el-button type="primary" size="small" @click="doSaveRoute()">Save</el-button>
+                </span>
+            </el-dialog>
+        </div>
+    </div>
+</main>
+</body>
+<script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                input: '',
+                points: [],
+                systemNameMap: {},
+                saveRouteDialogState: {
+                    name: '',
+                    visible: false,
+                    loading: false,
+                },
+                favoriteCardLoading: true,
+                loading: false,
+                favorites: [],
+                builderLoading: false,
+            }
+        },
+        methods: {
+            querySearch(queryString, cb) {
+                if (queryString.length < 2) {
+                    return;
+                }
+                fetch('/api/system/name-suggest?startWith=' + queryString)
+                    .then(res => res.json()).then(json => {
+                        for (const key in json) {
+                            let element = json[key];
+                            if (!this.systemNameMap.hasOwnProperty(element.value)) {
+                                this.systemNameMap[element.value] = element.id;
+                            }
+                        }
+                        cb(json);
+                    });
+            },
+            enterHandler() {
+                this.points.push(this.input);
+                this.input = '';
+            },
+            clearRoute() {
+                this.points = [];
+                this.input = '';
+            },
+            saveRoute() {
+                this.saveRouteDialogState.visible = true;
+            },
+            doSaveRoute() {
+                if (this.saveRouteDialogState.name.length === 0) {
+                    this.$message.warning("name field is required");
+                    return;
+                }
+                this.saveRouteDialogState.loading = true;
+                let request = {name: this.saveRouteDialogState.name, points: []};
+                for (const key in this.points) {
+                    request.points.push(this.systemNameMap[this.points[key]]);
+                }
+
+                fetch('/api/routes/save', {
+                    method: 'POST',
+                    headers: this.initRequestHeaders(),
+                    body: JSON.stringify(request),
+                }).then(res => res.json()).then(json => {
+                    this.favorites.push({
+                        id: json.favoriteId,
+                        name: this.saveRouteDialogState.name,
+                        points: this.points,
+                    });
+                    this.saveRouteDialogState = {
+                        name: '',
+                        visible: false,
+                    };
+                    this.$message.success('Successfully saved');
+                    this.saveRouteDialogState.loading = false;
+                });
+            },
+            deleteFavorite(id, index) {
+                this.favoriteCardLoading = true;
+                fetch('/api/routes/delete/' + id, {
+                    method: 'DELETE',
+                    headers: this.initRequestHeaders(),
+                }).then(res => {
+                    if (res.status === 204) {
+                        if (index === 0) {
+                            this.favorites = this.favorites.slice(1);
+                        } else {
+                            let start = this.favorites.slice(0, index - 1);
+                            let end = this.favorites.slice(index);
+                            this.favorites = start.concat(end);
+                        }
+                        this.$message.success("Successfully deleted");
+                        this.favoriteCardLoading = false;
+                    }
+                });
+            },
+            applyRoute(id) {
+                this.favoriteCardLoading = true;
+                fetch('/api/routes/apply/' + id, {
+                    method: 'POST',
+                    headers: this.initRequestHeaders(),
+                }).then(res => {
+                    if (res.status === 204) {
+                        this.$message.success("Successfully applied");
+                        this.favoriteCardLoading = false;
+                        return;
+                    }
+                    if (res.status === 500) {
+                        this.$message.warning("Server error");
+                        this.favoriteCardLoading = false;
+                    }
+                });
+            },
+            buildRoute() {
+                this.builderLoading = true;
+                let body = [];
+                for (const key in this.points) {
+                    body.push(this.systemNameMap[this.points[key]]);
+                }
+                fetch('/api/routes/build', {
+                    method: 'POST',
+                    headers: this.initRequestHeaders(),
+                    body: JSON.stringify(body),
+                }).then(res => {
+                    if (res.status === 204) {
+                        this.$message.success("Successfully applied");
+                        this.builderLoading = false;
+                        return;
+                    }
+                    if (res.status === 500) {
+                        this.$message.warning("Server error");
+                        this.builderLoading = false;
+                    }
+                });
+            },
+            initRequestHeaders() {
+                let headers = {};
+                headers[$("meta[name='_csrf_header']").attr("content")] = $("meta[name='_csrf']").attr("content");
+                headers["Content-Type"] = "application/json";
+                return headers;
+            },
+        },
+        computed: {
+            text() {
+                let text = '';
+                for (const key in this.points) {
+                    text += this.points[key] + ' > ';
+                }
+                return text;
+            },
+        },
+        mounted() {
+            fetch('/api/routes/').then(res => res.json()).then(json => {
+                this.favorites = json;
+                this.favoriteCardLoading = false;
+            });
+        },
+    })
+</script>
+</html>
