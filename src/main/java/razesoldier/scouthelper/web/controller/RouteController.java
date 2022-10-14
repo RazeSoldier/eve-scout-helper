@@ -2,7 +2,6 @@ package razesoldier.scouthelper.web.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import net.troja.eve.esi.ApiClient;
-import net.troja.eve.esi.ApiClientBuilder;
 import net.troja.eve.esi.ApiException;
 import net.troja.eve.esi.api.UserInterfaceApi;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +14,7 @@ import razesoldier.scouthelper.data.*;
 import razesoldier.scouthelper.data.dto.RouteFavoriteResource;
 import razesoldier.scouthelper.data.dto.RouteSaveRequest;
 import razesoldier.scouthelper.data.dto.RouteSaveResponse;
+import razesoldier.scouthelper.esi.ApiClientBuilderProxy;
 import razesoldier.scouthelper.esi.RouteBuilder;
 
 import java.util.List;
@@ -29,16 +29,16 @@ public class RouteController {
     private final RouteFavoriteRepository routeFavoriteRepository;
     private final UserRepository userRepository;
     private final SolarSystemRepository solarSystemRepository;
-    private final ApiClientBuilder apiClientBuilder;
+    private final ApiClientBuilderProxy apiClientBuilderProxy;
 
     public RouteController(RouteFavoriteRepository routeFavoriteRepository,
                            UserRepository userRepository,
                            SolarSystemRepository solarSystemRepository,
-                           ApiClientBuilder apiClientBuilder) {
+                           ApiClientBuilderProxy apiClientBuilderProxy) {
         this.routeFavoriteRepository = routeFavoriteRepository;
         this.userRepository = userRepository;
         this.solarSystemRepository = solarSystemRepository;
-        this.apiClientBuilder = apiClientBuilder;
+        this.apiClientBuilderProxy = apiClientBuilderProxy;
     }
 
     @GetMapping("/")
@@ -55,7 +55,7 @@ public class RouteController {
 
     @PostMapping("/build")
     public ResponseEntity<String> build(@RequestBody List<Long> routes, @RegisteredOAuth2AuthorizedClient @NotNull OAuth2AuthorizedClient oAuth2AuthorizedClient) {
-        ApiClient apiClient = apiClientBuilder.refreshToken(Objects.requireNonNull(oAuth2AuthorizedClient.getRefreshToken()).getTokenValue()).build();
+        ApiClient apiClient = buildApiClientFromAuthorizedClient(oAuth2AuthorizedClient);
         RouteBuilder builder = new RouteBuilder(new UserInterfaceApi(apiClient));
         builder.addPoints(routes);
         try {
@@ -75,7 +75,7 @@ public class RouteController {
         Optional<RouteFavorite> favoriteOptional = getRouteFavoriteByIdAndUserId(id, oAuth2AuthorizedClient);
         AtomicBoolean failed = new AtomicBoolean(false);
         favoriteOptional.ifPresent(favorite -> {
-            ApiClient apiClient = apiClientBuilder.refreshToken(Objects.requireNonNull(oAuth2AuthorizedClient.getRefreshToken()).getTokenValue()).build();
+            ApiClient apiClient = buildApiClientFromAuthorizedClient(oAuth2AuthorizedClient);
             RouteBuilder routeBuilder = new RouteBuilder(new UserInterfaceApi(apiClient));
             routeBuilder.addPoints(favorite.getPoints());
             try {
@@ -113,5 +113,9 @@ public class RouteController {
 
     private Optional<RouteFavorite> getRouteFavoriteByIdAndUserId(Long id, @NotNull OAuth2AuthorizedClient oAuth2AuthorizedClient) {
         return routeFavoriteRepository.findByIdAndUserId(id, userRepository.findByName(oAuth2AuthorizedClient.getPrincipalName()).getId());
+    }
+
+    private ApiClient buildApiClientFromAuthorizedClient(@NotNull OAuth2AuthorizedClient oAuth2AuthorizedClient) {
+        return apiClientBuilderProxy.build(Objects.requireNonNull(oAuth2AuthorizedClient.getRefreshToken()).getTokenValue());
     }
 }
