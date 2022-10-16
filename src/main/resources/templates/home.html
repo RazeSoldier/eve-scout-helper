@@ -3,7 +3,7 @@
 <head th:replace="head :: common_header(_)">
 </head>
 <body>
-<nav th:replace="navbar"></nav>
+<nav th:replace="navbar::body(${isLogon})"></nav>
 <main class="py-4" id="content">
     <div class="container" id="app">
         <div class="row">

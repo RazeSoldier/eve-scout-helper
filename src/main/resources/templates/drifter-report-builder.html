@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head th:replace="head :: common_header(~{::title})">
+    <title>Drifter Report Builder</title>
+</head>
+<body>
+<nav th:replace="navbar::body(${isLogon})"></nav>
+<main class="py-4" id="content">
+    <div class="container" id="app">
+        <h3>Drifter Report Builder</h3>
+        <div class="row">
+            <div class="col-md-6" id="builder">
+                <el-card>
+                    <div slot="header" class="clearfix">
+                        <span>Builder</span>
+                    </div>
+                    <div>
+                        <el-form label-width="80px" size="medium">
+                            <el-form-item label="Time">
+                                <el-input v-model="form.time" maxlength="5" style="width: 80px"></el-input>
+                                <el-button size="mini" type="primary" @click="setCurrentTime">Set current time</el-button>
+                            </el-form-item>
+                            <el-form-item label="Region">
+                                <el-select v-model="form.region" filterable allow-create default-first-option>
+                                    <el-option
+                                            v-for="item in regionOptions"
+                                            :key="item"
+                                            :label="item"
+                                            :value="item">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-divider></el-divider>
+                            <el-form-item label="Uni type">
+                                <el-select v-model="form.holeType">
+                                    <el-option
+                                            v-for="item in uniTypeOptions"
+                                            :key="item.value"
+                                            :label="item.label"
+                                            :value="item.value">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="System">
+                                <el-autocomplete
+                                        v-model="form.system"
+                                        :fetch-suggestions="querySearch"
+                                        :trigger-on-focus="false">
+                                </el-autocomplete>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button @click="addHole" size="medium">Add</el-button>
+                            </el-form-item>
+                            <el-divider></el-divider>
+                            <div v-for="(tag,index) in holes">
+                                <el-tag
+                                        :key="index"
+                                        :type="tag.color"
+                                        closable
+                                        style="margin-bottom: 3px"
+                                        @close="handleClose(tag)">
+                                    {{tag.type}} {{tag.name}}
+                                </el-tag>
+                            </div>
+                        </el-form>
+                    </div>
+                </el-card>
+            </div>
+            <div class="col-md-6" id="result">
+                <el-card>
+                    <div slot="header" class="clearfix">
+                        <span>Result</span>
+                    </div>
+                    <div>
+                        <el-input type="textarea" v-model="resultText" autosize readonly></el-input>
+                    </div>
+                </el-card>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+<script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                form: {
+                    time: '',
+                    region: '',
+                    holeType: '',
+                    system: '',
+                },
+                regionOptions: [
+                    "TKE",
+                    "PF",
+                    "Malpais",
+                ],
+                uniTypeOptions: [
+                    {value: 'B', label: 'Barbican'},
+                    {value: 'C', label: 'Conflux'},
+                    {value: 'R', label: 'Redoubt'},
+                    {value: 'S', label: 'Sentinel'},
+                    {value: 'V', label: 'Vidette'},
+                ],
+                holes: [],
+                systemNameMap: {},
+            }
+        },
+        methods: {
+            setCurrentTime() {
+                const currentDate = new Date();
+                let min = currentDate.getUTCMinutes();
+                this.form.time = currentDate.getUTCHours() + ":" + (min < 10 ? '0' + min : min);
+            },
+            addHole() {
+                if (this.form.holeType === '' || this.form.system === '') {
+                    this.$message.warning("Uni type and System are required");
+                    return;
+                }
+                let color = '';
+                switch (this.form.holeType) {
+                    case 'B':
+                        color = '';
+                        break;
+                    case 'C':
+                        color = 'success';
+                        break;
+                    case 'R':
+                        color = 'info';
+                        break;
+                    case 'S':
+                        color = 'warning';
+                        break;
+                    case 'V':
+                        color = 'danger';
+                }
+                this.holes.push({name: this.form.system, type: this.form.holeType, color: color});
+                this.form.system = '';
+                this.form.holeType = '';
+            },
+            handleClose(tag) {
+                this.holes.splice(this.holes.indexOf(tag), 1);
+            },
+            querySearch(queryString, cb) {
+                if (queryString.length < 2) {
+                    return;
+                }
+                fetch('/api/system/name-suggest?startWith=' + queryString)
+                    .then(res => res.json()).then(json => {
+                    for (const key in json) {
+                        let element = json[key];
+                        if (!this.systemNameMap.hasOwnProperty(element.value)) {
+                            this.systemNameMap[element.value] = element.id;
+                        }
+                    }
+                    cb(json);
+                });
+            },
+        },
+        computed: {
+            resultText() {
+                const time = this.form.time === '' ? 'xxx' : this.form.time;
+                const region = this.form.region === '' ? 'xxx' : this.form.region;
+                const bList = [];
+                const cList = [];
+                const rList = [];
+                const sList = [];
+                const vList = [];
+                for (const hole of this.holes) {
+                    switch (hole.type) {
+                        case 'B':
+                            bList.push(hole.name);
+                            break;
+                        case 'C':
+                            cList.push(hole.name);
+                            break;
+                        case 'R':
+                            rList.push(hole.name);
+                            break;
+                        case 'S':
+                            sList.push(hole.name);
+                            break;
+                        case 'V':
+                            vList.push(hole.name);
+                    }
+                }
+                const bText = bList.length === 0 ? '~' : bList.join("\n");
+                const cText = cList.length === 0 ? '~' : cList.join("\n");
+                const rText = rList.length === 0 ? '~' : rList.join("\n");
+                const sText = sList.length === 0 ? '~' : sList.join("\n");
+                const vText = vList.length === 0 ? '~' : vList.join("\n");
+                return `Drifter Report ${time}
+~ EoL Mapped (M) & Not Mapped (NM)
+~ ${region} Scout Done
+~~~~~
+Barbican:
+${bText}
+
+Conflux:
+${cText}
+
+Redoubt:
+${rText}
+
+Sentinel:
+${sText}
+
+Vidette:
+${vText}`;
+            },
+        },
+    });
+</script>
+</html>

@@ -27,8 +27,14 @@ public class WebSecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(this.oAuth2UserService()) // Override Spring's built-in implementations for OAuth2UserService
-			    )
-			).authorizeHttpRequests().anyRequest().hasRole("USER").and();
+                        )
+                )
+                .authorizeHttpRequests()
+                    .antMatchers("/drifter-report/build").permitAll()
+                    .antMatchers("/api/system/name-suggest").permitAll()
+                    .antMatchers("/styles.css", "/fonts/**").permitAll()
+                    .anyRequest().hasRole("USER")
+                .and();
         return http.build();
     }
 

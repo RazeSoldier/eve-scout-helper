@@ -1,4 +1,4 @@
-<nav id="navbar" class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
+<nav id="navbar" class="navbar navbar-expand-md navbar-light bg-white shadow-sm" th:fragment="body(isLogon)">
   <div class="container">
     <a class="navbar-brand" th:href="@{/}">
       Scout Helper
@@ -14,7 +14,8 @@
       <!-- Right Side Of Navbar -->
       <ul class="navbar-nav ml-auto">
         <li class="nav-item">
-          <a class="nav-link" href="/logout"
+          <a class="nav-link" href="/login" th:unless="${isLogon}">Login</a>
+          <a class="nav-link" href="/logout" th:if="${isLogon}"
              onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">Logout</a>
           <form id="logout-form" th:action="@{/logout}" method="POST"

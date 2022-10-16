@@ -12,6 +12,7 @@ public class HomeController {
     @GetMapping("/")
     public String show(@AuthenticationPrincipal @NotNull EVEOAuth2User user, @NotNull Model model) {
         model.addAttribute("name", user.getName());
+        model.addAttribute("isLogon", true);
         return "home";
     }
 }
