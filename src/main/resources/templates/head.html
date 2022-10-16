@@ -1,0 +1,19 @@
+<head th:fragment="common_header(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta th:name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <title th:replace="${title}">Scout Helper</title>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/jquery@3.6.1/dist/jquery.min.js" defer></script>
+    <script src="https://unpkg.com/bootstrap@4.6.2/dist/js/bootstrap.min.js" defer></script>
+    <!-- Fonts -->
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+
+    <!-- Styles -->
+    <link href="https://unpkg.com/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
+    <link th:href="@{/styles.css}" rel="stylesheet">
+</head>

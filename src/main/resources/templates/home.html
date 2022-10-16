@@ -1,46 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta th:name="_csrf" th:content="${_csrf.token}"/>
-    <meta th:name="_csrf_header" th:content="${_csrf.headerName}"/>
-
-    <title>Scout Helper</title>
-
-    <!-- Scripts -->
-    <script src="https://unpkg.com/jquery@3.6.1/dist/jquery.min.js" defer></script>
-    <script src="https://unpkg.com/bootstrap@4.6.2/dist/js/bootstrap.min.js" defer></script>
-    <!-- Fonts -->
-    <link rel="dns-prefetch" href="//fonts.gstatic.com">
-
-    <!-- Styles -->
-    <link href="https://unpkg.com/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://unpkg.com/element-ui/lib/theme-chalk/index.css" rel="stylesheet">
-    <link th:href="@{styles.css}" rel="stylesheet">
+<head th:replace="head :: common_header(_)">
 </head>
 <body>
-<nav id="navbar" class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-    <div class="container">
-        <a class="navbar-brand" th:href="@{/}">
-            Scout Helper
-        </a>
-
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <!-- Left Side Of Navbar -->
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/logout"
-                       onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">Logout</a>
-                    <form id="logout-form" th:action="@{/logout}" method="POST"
-                          style="display: none;">
-                    </form>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+<nav th:replace="navbar"></nav>
 <main class="py-4" id="content">
     <div class="container" id="app">
         <div class="row">
