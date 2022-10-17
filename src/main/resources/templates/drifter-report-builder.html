@@ -45,8 +45,10 @@
                                 <el-autocomplete
                                         v-model="form.system"
                                         :fetch-suggestions="querySearch"
-                                        :trigger-on-focus="false">
+                                        :trigger-on-focus="false"
+                                        style="margin-right: 10px">
                                 </el-autocomplete>
+                                <el-checkbox v-model="form.eol">EOL?</el-checkbox>
                             </el-form-item>
                             <el-form-item>
                                 <el-button @click="addHole" size="medium">Add</el-button>
@@ -54,12 +56,13 @@
                             <el-divider></el-divider>
                             <div v-for="(tag,index) in holes">
                                 <el-tag
-                                        :key="index"
-                                        :type="tag.color"
-                                        closable
-                                        style="margin-bottom: 3px"
-                                        @close="handleClose(tag)">
+                                    :key="index"
+                                    :type="tag.color"
+                                    closable
+                                    style="margin-bottom: 3px"
+                                    @close="handleClose(tag)">
                                     {{tag.type}} {{tag.name}}
+                                    <template v-if="tag.eol"> (EOL)</template>
                                 </el-tag>
                             </div>
                         </el-form>
@@ -92,6 +95,7 @@
                     region: '',
                     holeType: '',
                     system: '',
+                    eol: false,
                 },
                 regionOptions: [
                     "TKE",
@@ -137,9 +141,10 @@
                     case 'V':
                         color = 'danger';
                 }
-                this.holes.push({name: this.form.system, type: this.form.holeType, color: color});
+                this.holes.push({name: this.form.system, type: this.form.holeType, color: color, eol: this.form.eol});
                 this.form.system = '';
                 this.form.holeType = '';
+                this.form.eol = false;
             },
             handleClose(tag) {
                 this.holes.splice(this.holes.indexOf(tag), 1);
@@ -170,21 +175,25 @@
                 const sList = [];
                 const vList = [];
                 for (const hole of this.holes) {
+                    let holeText = hole.name;
+                    if (hole.eol) {
+                        holeText += ' (EOL)';
+                    }
                     switch (hole.type) {
                         case 'B':
-                            bList.push(hole.name);
+                            bList.push(holeText);
                             break;
                         case 'C':
-                            cList.push(hole.name);
+                            cList.push(holeText);
                             break;
                         case 'R':
-                            rList.push(hole.name);
+                            rList.push(holeText);
                             break;
                         case 'S':
-                            sList.push(hole.name);
+                            sList.push(holeText);
                             break;
                         case 'V':
-                            vList.push(hole.name);
+                            vList.push(holeText);
                     }
                 }
                 const bText = bList.length === 0 ? '~' : bList.join("\n");
