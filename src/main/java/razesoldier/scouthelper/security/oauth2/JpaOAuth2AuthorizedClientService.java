@@ -40,16 +40,22 @@ public class JpaOAuth2AuthorizedClientService implements OAuth2AuthorizedClientS
 
     @Override
     public void saveAuthorizedClient(OAuth2AuthorizedClient authorizedClient, @NotNull Authentication principal) {
-        if (userRepository.findByName(principal.getName()) != null) {
-            return;
-        }
-        OAuth2AuthenticationToken oAuth2AuthenticationToken = (OAuth2AuthenticationToken) principal;
-        EVEOAuth2User eveoAuth2User = (EVEOAuth2User) oAuth2AuthenticationToken.getPrincipal();
-        Long userId = eveoAuth2User.getCharacterId();
+        User user = userRepository.findByName(principal.getName());
+        if (user == null) {
+            OAuth2AuthenticationToken oAuth2AuthenticationToken = (OAuth2AuthenticationToken) principal;
+            EVEOAuth2User eveoAuth2User = (EVEOAuth2User) oAuth2AuthenticationToken.getPrincipal();
+            Long userId = eveoAuth2User.getCharacterId();
 
-        Token token = tokenRepository.save(buildToken(authorizedClient.getAccessToken(), Objects.requireNonNull(authorizedClient.getRefreshToken())));
-        User user = new User(userId, eveoAuth2User.getName(), token);
-        userRepository.save(user);
+            Token token = tokenRepository.save(buildToken(authorizedClient.getAccessToken(), Objects.requireNonNull(authorizedClient.getRefreshToken())));
+            userRepository.save(new User(userId, eveoAuth2User.getName(), token));
+        } else {
+            Token token = user.getToken();
+            var accessToken = authorizedClient.getAccessToken();
+            var refreshToken = Objects.requireNonNull(authorizedClient.getRefreshToken());
+            token.setAccessToken(new AccessToken(accessToken.getTokenValue(), accessToken.getIssuedAt(), accessToken.getExpiresAt(), accessToken.getScopes()));
+            token.setRefreshToken(new RefreshToken(refreshToken.getTokenValue(), refreshToken.getIssuedAt()));
+            tokenRepository.save(token);
+        }
     }
 
     @Override

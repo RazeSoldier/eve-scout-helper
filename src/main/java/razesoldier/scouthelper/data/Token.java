@@ -19,10 +19,12 @@ public class Token {
     private Long id;
 
     @Embedded
-    private final AccessToken accessToken;
+    @NonNull
+    private AccessToken accessToken;
 
     @Embedded
-    private final RefreshToken refreshToken;
+    @NonNull
+    private RefreshToken refreshToken;
 
     @Override
     public boolean equals(Object o) {
