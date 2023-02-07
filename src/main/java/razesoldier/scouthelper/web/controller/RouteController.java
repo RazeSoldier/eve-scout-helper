@@ -116,6 +116,6 @@ public class RouteController {
     }
 
     private ApiClient buildApiClientFromAuthorizedClient(@NotNull OAuth2AuthorizedClient oAuth2AuthorizedClient) {
-        return apiClientBuilderProxy.build(Objects.requireNonNull(oAuth2AuthorizedClient.getRefreshToken()).getTokenValue());
+        return apiClientBuilderProxy.build(Objects.requireNonNull(oAuth2AuthorizedClient.getAccessToken()).getTokenValue());
     }
 }

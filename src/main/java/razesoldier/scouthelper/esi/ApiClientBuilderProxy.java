@@ -15,7 +15,7 @@ public class ApiClientBuilderProxy {
         this.clientId = clientRegistration.getClientId();
     }
 
-    public ApiClient build(@NotNull String refreshToken) {
-        return new ApiClientBuilder().clientID(clientId).refreshToken(refreshToken).build();
+    public ApiClient build(@NotNull String accessToken) {
+        return new ApiClientBuilder().clientID(clientId).accessToken(accessToken).build();
     }
 }
