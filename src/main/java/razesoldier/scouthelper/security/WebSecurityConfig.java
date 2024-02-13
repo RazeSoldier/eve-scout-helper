@@ -8,9 +8,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.FormHttpMessageConverter;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.oauth2.client.*;
+import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.RefreshTokenOAuth2AuthorizedClientProvider;
 import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.DefaultRefreshTokenTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
@@ -52,15 +56,15 @@ public class WebSecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(this.oAuth2UserService()) // Override Spring's built-in implementations for OAuth2UserService
                         ).tokenEndpoint(endpointConfig -> endpointConfig
-                                .accessTokenResponseClient(accessTokenResponseClient()) // Override Spring's built-in implementations for OAuth2AccessTokenResponseClient
+                                .accessTokenResponseClient(accessTokenResponseClient())
                         )
                 )
-                .authorizeHttpRequests()
-                    .antMatchers("/drifter-report/build").permitAll()
-                    .antMatchers("/api/system/name-suggest").permitAll()
-                    .antMatchers("/styles.css", "/fonts/**").permitAll()
-                    .anyRequest().hasRole("USER")
-                .and();
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/drifter-report/build").permitAll()
+                        .requestMatchers("/api/system/name-suggest").permitAll()
+                        .requestMatchers("/styles.css", "/fonts/**").permitAll()
+                        .anyRequest().authenticated()
+                ).oauth2Login(Customizer.withDefaults());
         return http.build();
     }
 

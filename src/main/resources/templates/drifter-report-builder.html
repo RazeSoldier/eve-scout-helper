@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-<head th:replace="head :: common_header(~{::title})">
+<head th:replace="~{head :: common_header(~{::title})}">
     <title>Drifter Report Builder</title>
 </head>
 <body>
-<nav th:replace="navbar::body(${isLogon})"></nav>
+<nav th:replace="~{navbar::body(${isLogon})}"></nav>
 <main class="py-4" id="content">
     <div class="container" id="app">
         <h3>Drifter Report Builder</h3>
