@@ -1,12 +1,14 @@
 package razesoldier.scouthelper.security;
 
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.Socks5Proxy;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.JettyClientHttpRequestFactory;
 import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,8 +37,6 @@ import razesoldier.scouthelper.security.oauth2.EVEOAuth2UserService;
 import razesoldier.scouthelper.security.oauth2.JpaOAuth2AuthorizedClientService;
 import razesoldier.scouthelper.security.oauth2.OAuth2Properties;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.util.Arrays;
 
 @Configuration
@@ -126,12 +126,12 @@ public class WebSecurityConfig {
                 .errorHandler(new OAuth2ErrorResponseErrorHandler())
                 .requestFactory(() -> {
                     var proxyConfig = oAuth2Properties.getProxy();
-                    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+                    HttpClient httpClient = new HttpClient();
                     // Determine whether there is a proxy configured
                     if (proxyConfig != null) {
-                        factory.setProxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyConfig.getHost(), proxyConfig.getPort())));
+                        httpClient.getProxyConfiguration().addProxy(new Socks5Proxy(proxyConfig.getHost(), proxyConfig.getPort()));
                     }
-                    return factory;
+                    return new JettyClientHttpRequestFactory(httpClient);
                 }).build();
     }
 }

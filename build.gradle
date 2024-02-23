@@ -27,6 +27,7 @@ dependencies {
     implementation 'org.flywaydb:flyway-core:10.7.1'
     implementation 'org.flywaydb:flyway-mysql:10.7.1'
     implementation 'org.springframework.security:spring-security-test'
+    implementation 'org.eclipse.jetty:jetty-client:12.0.6'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.mysql:mysql-connector-j'
