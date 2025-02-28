@@ -10,17 +10,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.JettyClientHttpRequestFactory;
 import org.springframework.http.converter.FormHttpMessageConverter;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.RefreshTokenOAuth2AuthorizedClientProvider;
-import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
-import org.springframework.security.oauth2.client.endpoint.DefaultRefreshTokenTokenResponseClient;
-import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
-import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
+import org.springframework.security.oauth2.client.endpoint.*;
 import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -30,6 +26,7 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepo
 import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 import razesoldier.scouthelper.data.TokenRepository;
 import razesoldier.scouthelper.data.UserRepository;
@@ -64,7 +61,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/system/name-suggest").permitAll()
                         .requestMatchers("/styles.css", "/fonts/**").permitAll()
                         .anyRequest().authenticated()
-                ).oauth2Login(Customizer.withDefaults());
+                );
         return http.build();
     }
 
@@ -85,8 +82,8 @@ public class WebSecurityConfig {
             ClientRegistrationRepository clientRegistrationRepository,
             OAuth2AuthorizedClientRepository authorizedClientRepository
     ) {
-        var tokenResponseClient = new DefaultRefreshTokenTokenResponseClient();
-        tokenResponseClient.setRestOperations(prepareProxiedRestTemplate());
+        var tokenResponseClient = new RestClientRefreshTokenTokenResponseClient();
+        tokenResponseClient.setRestClient(prepareProxiedRestClient());
 
         // Create ClientCredentialsOAuth2AuthorizedClientProvider and override default setAccessTokenResponseClient
         // with the one we created in this method
@@ -112,11 +109,11 @@ public class WebSecurityConfig {
     }
 
     /**
-     * Custom DefaultAuthorizationCodeTokenResponseClient, use customized {@link RestTemplate} that provided by {@link #prepareProxiedRestTemplate()}
+     * Custom DefaultAuthorizationCodeTokenResponseClient, use customized {@link RestClient} that provided by {@link #prepareProxiedRestClient()}
      */
     private @NotNull OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
-        var client = new DefaultAuthorizationCodeTokenResponseClient();
-        client.setRestOperations(prepareProxiedRestTemplate());
+        var client = new RestClientAuthorizationCodeTokenResponseClient();
+        client.setRestClient(prepareProxiedRestClient());
         return client;
     }
 
@@ -133,5 +130,9 @@ public class WebSecurityConfig {
                     }
                     return new JettyClientHttpRequestFactory(httpClient);
                 }).build();
+    }
+
+    private @NotNull RestClient prepareProxiedRestClient() {
+        return RestClient.create(prepareProxiedRestTemplate());
     }
 }
